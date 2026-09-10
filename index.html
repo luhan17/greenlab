@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>그린 발명 연구소 | Green Invention Lab</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+
+  <!-- Canvas Confetti Effect -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- Google Fonts: Noto Sans KR -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      font-family: 'Noto Sans KR', sans-serif;
+      box-sizing: border-box;
+    }
+
+    .card-hover {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .card-hover:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px -5px rgba(5, 150, 105, 0.18);
+    }
+
+    .selected-card {
+      border-color: #059669 !important;
+      background-color: #f0fdf4 !important;
+      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.3) !important;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #sketchCanvas {
+      touch-action: none;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    /* -------------------------------------------------------------
+       STRICT 1-PAGE A4 LANDSCAPE (가로형) PRINT CONFIGURATION
+       ------------------------------------------------------------- */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 6mm;
+      }
+
+      body, html {
+        background: white !important;
+        color: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      header, footer, nav, .no-print, button, #toastModal {
+        display: none !important;
+      }
+
+      #app {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: none !important;
+        min-height: auto !important;
+        height: 100% !important;
+      }
+
+      main {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+
+      #step1View, #step2View, #step3View, #step4View {
+        display: none !important;
+      }
+
+      #step5View {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      /* Guaranteed 1-Page A4 Landscape Container */
+      #reportPaper {
+        box-shadow: none !important;
+        border: 3px solid #059669 !important;
+        padding: 12px 18px !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 195mm !important; /* Strictly fits within A4 Landscape printable height */
+        max-height: 195mm !important;
+        box-sizing: border-box !important;
+        border-radius: 12px !important;
+        page-break-inside: avoid !important;
+        page-break-after: avoid !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+      }
+
+      .print-compact-text {
+        font-size: 11px !important;
+        line-height: 1.35 !important;
+      }
+
+      .print-stamp {
+        width: 55px !important;
+        height: 55px !important;
+        font-size: 8px !important;
+      }
+    }
+  </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 flex flex-col antialiased">
+
+  <div id="app" class="flex-1 flex flex-col min-h-screen bg-gradient-to-br from-emerald-50/60 via-slate-50 to-teal-50/50">
+
+    <!-- Application Top Navigation Header -->
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-emerald-100 shadow-xs no-print">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        
+        <!-- Logo & Title -->
+        <div onclick="goToStep(1)" class="flex items-center gap-2.5 cursor-pointer group">
+          <div class="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white font-black text-xl shadow-md group-hover:scale-105 transition-transform">
+            🌱
+          </div>
+          <div>
+            <h1 class="text-base sm:text-lg font-extrabold text-emerald-950 tracking-tight flex items-center gap-2">
+              그린 발명 연구소
+              <span class="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">가로형 보고서</span>
+            </h1>
+            <p class="text-xs text-emerald-600 font-medium hidden sm:block">환경 문제를 발명 사고 기법으로 해결하는 나만의 그린 발명 워크시트</p>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation Steps -->
+        <nav class="hidden md:flex items-center gap-1 bg-emerald-50/80 p-1 rounded-2xl border border-emerald-100/80">
+          <button id="navPill1" onclick="goToStep(1)" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-white text-emerald-800 shadow-xs">
+            <span class="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">1</span>
+            안내
+          </button>
+          <div class="w-2 h-0.5 bg-emerald-200"></div>
+          <button id="navPill2" onclick="goToStep(2)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-emerald-700 transition flex items-center gap-1">
+            <span id="navNum2" class="w-4 h-4 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">2</span>
+            문제 선택
+          </button>
+          <div class="w-2 h-0.5 bg-emerald-200"></div>
+          <button id="navPill3" onclick="checkStepAccess(3)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-emerald-700 transition flex items-center gap-1">
+            <span id="navNum3" class="w-4 h-4 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">3</span>
+            발명 사고 기법
+          </button>
+          <div class="w-2 h-0.5 bg-emerald-200"></div>
+          <button id="navPill4" onclick="checkStepAccess(4)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-emerald-700 transition flex items-center gap-1">
+            <span id="navNum4" class="w-4 h-4 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">4</span>
+            명세서 & 스케치
+          </button>
+          <div class="w-2 h-0.5 bg-emerald-200"></div>
+          <button id="navPill5" onclick="checkStepAccess(5)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-emerald-700 transition flex items-center gap-1">
+            <span id="navNum5" class="w-4 h-4 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">5</span>
+            보고서 출력
+          </button>
+        </nav>
+
+        <!-- Reset Button -->
+        <button onclick="resetInventionProcess()" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl text-xs transition">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-emerald-600"></i>
+          <span>새로 작성</span>
+        </button>
+      </div>
+
+      <!-- Mobile Progress Bar -->
+      <div class="md:hidden w-full bg-emerald-100 h-1 overflow-hidden">
+        <div id="mobileProgressBar" class="bg-emerald-600 h-full w-1/5 transition-all duration-300"></div>
+      </div>
+    </header>
+
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
+
+      <!-- STEP 1: Introduction / Hero Screen -->
+      <section id="step1View" class="fade-in my-auto py-6 space-y-8 text-center max-w-3xl mx-auto">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs sm:text-sm font-extrabold">
+          <span>🌱 지구를 구하는 창의 어린이 발명가</span>
+        </div>
+
+        <div class="space-y-4">
+          <h1 class="text-3xl sm:text-5xl font-black text-emerald-950 leading-tight tracking-tight">
+            🌱 그린 발명 연구소
+          </h1>
+          <p class="text-base sm:text-xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
+            일상의 환경 문제를 발명 사고 기법으로 해결하고 가로형 보고서를 완성해보세요!
+          </p>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl mx-auto">
+            주변에서 흔히 발견하는 8가지 환경 오염 문제를 탐색하고, 쉽고 직관적인 <strong>발명 사고 기법</strong>을 활용해 아이디어를 구상하세요. 완성된 발명 아이디어는 한눈에 보기 쉬운 <strong>가로형 1페이지 보고서</strong>로 출력하거나 PDF로 저장할 수 있습니다.
+          </p>
+        </div>
+
+        <!-- 3 Workflow Steps -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left pt-2">
+          <div class="bg-white p-5 rounded-2xl border border-emerald-100 shadow-xs space-y-2">
+            <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-base">1</div>
+            <h3 class="font-extrabold text-slate-900 text-sm">환경 문제 고르기</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">플라스틱 컵, 비닐봉지, 배달 용기, 음식물 쓰레기, 전자 폐기물, 버려지는 옷 등 해결하고 싶은 문제를 정합니다.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-teal-100 shadow-xs space-y-2">
+            <div class="w-9 h-9 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center font-black text-base">2</div>
+            <h3 class="font-extrabold text-slate-900 text-sm">발명 사고 기법 적용</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">더하기, 빼기, 대체하기, 모양 바꾸기 등 8가지 친근한 생각 키워드로 아이디어를 확산합니다.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-cyan-100 shadow-xs space-y-2">
+            <div class="w-9 h-9 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center font-black text-base">3</div>
+            <h3 class="font-extrabold text-slate-900 text-sm">스케치 & 가로형 보고서</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">명세서와 아이디어 스케치를 직접 작성하면 한 쪽에 쏙 들어오는 가로형 보고서가 완성됩니다.</p>
+          </div>
+        </div>
+
+        <!-- Start CTA Button -->
+        <div class="pt-4">
+          <button onclick="goToStep(2)" class="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black px-10 py-4 rounded-2xl text-base shadow-lg transition hover:scale-105 flex items-center justify-center gap-2.5 mx-auto">
+            <span>시작하기 🚀</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 2: Environmental Problem Selection -->
+      <section id="step2View" class="hidden fade-in space-y-6">
+        <div class="text-center max-w-2xl mx-auto space-y-2">
+          <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold">
+            STEP 1 · 환경 문제 선택
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-black text-emerald-950">
+            해결하고 싶은 환경 문제를 고르세요!
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-600">
+            일상 생활 속에서 지구를 아프게 하는 다양한 오염 문제 중 하나를 선택해 주세요.
+          </p>
+        </div>
+
+        <!-- Problem Selection Grid -->
+        <div id="problemGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Dynamic Cards Populated via JS -->
+        </div>
+
+        <!-- Custom Problem Input Box -->
+        <div id="customProblemBox" class="hidden bg-white p-4 rounded-2xl border-2 border-emerald-500 shadow-xs space-y-2">
+          <label class="block text-xs font-bold text-slate-700">내가 직접 찾은 환경 문제 입력:</label>
+          <div class="flex gap-2">
+            <input id="inputCustomProblem" type="text" placeholder="예: 바닷속 미세 플라스틱 및 방치된 폐어망 문제" class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+            <button onclick="applyCustomProblem()" class="bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl text-xs hover:bg-emerald-700 transition">적용</button>
+          </div>
+        </div>
+
+        <!-- Bottom Actions Bar -->
+        <div class="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xs border border-emerald-100 flex items-center justify-between gap-3">
+          <div class="text-xs sm:text-sm text-slate-600 font-medium">
+            선택된 문제: <strong id="selectedProblemLabel" class="text-emerald-800 font-bold">선택되지 않음</strong>
+          </div>
+          <button id="btnStep2Next" onclick="goToStep(3)" disabled class="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold px-6 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-2">
+            <span>다음: 발명 사고 기법</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 3: Invention Technique Selection -->
+      <section id="step3View" class="hidden fade-in space-y-6">
+        <div class="bg-emerald-100/80 border border-emerald-200 rounded-2xl p-3 flex items-center justify-between text-xs sm:text-sm text-emerald-900">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-emerald-700">🎯 선택한 환경 문제:</span>
+            <span id="step3ProblemBadge" class="font-black bg-white px-3 py-1 rounded-xl shadow-2xs"></span>
+          </div>
+          <button onclick="goToStep(2)" class="text-xs text-emerald-700 hover:underline font-bold flex items-center gap-1">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 문제 변경
+          </button>
+        </div>
+
+        <div class="text-center max-w-2xl mx-auto space-y-2">
+          <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-teal-100 text-teal-800 text-xs font-extrabold">
+            STEP 2 · 발명 사고 기법 선택
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-black text-emerald-950">
+            어떤 발명 사고 기법을 적용해볼까요?
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-600">
+            창의적인 아이디어를 쉽게 끌어내는 8가지 발명 생각 도구 중 하나를 고르세요.
+          </p>
+        </div>
+
+        <!-- Technique Selection Grid -->
+        <div id="techniqueGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Dynamic Cards Populated via JS -->
+        </div>
+
+        <!-- Bottom Actions Bar -->
+        <div class="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xs border border-emerald-100 flex items-center justify-between gap-3">
+          <button onclick="goToStep(2)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>이전</span>
+          </button>
+
+          <div class="text-xs sm:text-sm text-slate-600 font-medium hidden sm:block">
+            선택된 기법: <strong id="selectedTechniqueLabel" class="text-emerald-800 font-bold">선택되지 않음</strong>
+          </div>
+
+          <button id="btnStep3Next" onclick="goToStep(4)" disabled class="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold px-6 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-2">
+            <span>다음: 명세서 & 스케치</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 4: Interactive Worksheet & Drawing Canvas -->
+      <section id="step4View" class="hidden fade-in space-y-6">
+        <div class="bg-white rounded-2xl p-4 shadow-xs border border-emerald-100 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+            <div class="flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 text-emerald-900 font-bold">
+              <span>🎯 문제:</span>
+              <span id="step4ProblemBadge" class="text-emerald-700"></span>
+            </div>
+            <div class="flex items-center gap-1.5 bg-teal-50 px-3 py-1.5 rounded-xl border border-teal-200 text-teal-900 font-bold">
+              <span>💡 기법:</span>
+              <span id="step4TechniqueBadge" class="text-teal-700"></span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400 font-medium">왼쪽에 명세서를 작성하고 오른쪽에 아이디어 스케치를 그려주세요.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- Left Column: Invention Specifications (5 cols) -->
+          <div class="lg:col-span-5 bg-white p-5 sm:p-6 rounded-3xl shadow-xs border border-emerald-100 space-y-4">
+            <h3 class="text-base sm:text-lg font-extrabold text-emerald-950 flex items-center gap-2 border-b border-slate-100 pb-3">
+              <i data-lucide="file-text" class="w-5 h-5 text-emerald-600"></i>
+              발명품 명세서 작성
+            </h3>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">모둠 또는 발명가 이름 <span class="text-red-500">*</span></label>
+              <input id="inputTeamName" type="text" placeholder="예: 지구 지킴이 1모둠 / 김발명" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">발명품 이름 <span class="text-red-500">*</span></label>
+              <input id="inputInventionName" type="text" placeholder="예: 접이식 실리콘 다회용 배달용기" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">핵심 아이디어 및 작동 원리 <span class="text-red-500">*</span></label>
+              <textarea id="inputIdeaDesc" rows="4" placeholder="어떤 원리로 작동하고, 어떻게 문제가 해결되는지 자세히 설명해보세요..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm resize-none"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">지구 환경에 도움이 되는 점 (기대 효과) <span class="text-red-500">*</span></label>
+              <textarea id="inputEcoEffect" rows="3" placeholder="플라스틱 쓰레기가 얼마나 줄어들거나 대기 오염이 감소하는지 적어보세요..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm resize-none"></textarea>
+            </div>
+          </div>
+
+          <!-- Right Column: Interactive Canvas Sketchpad (7 cols) -->
+          <div class="lg:col-span-7 bg-white p-5 sm:p-6 rounded-3xl shadow-xs border border-emerald-100 flex flex-col space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 class="text-base sm:text-lg font-extrabold text-emerald-950 flex items-center gap-2">
+                <i data-lucide="pen-tool" class="w-5 h-5 text-emerald-600"></i>
+                발명품 아이디어 스케치북
+              </h3>
+              <span class="text-xs text-slate-400 font-medium">마우스/손가락으로 자유롭게 그림을 그려보세요</span>
+            </div>
+
+            <!-- Canvas Viewport -->
+            <div class="relative w-full aspect-[4/3] bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl overflow-hidden shadow-inner flex items-center justify-center">
+              <canvas id="sketchCanvas" class="w-full h-full bg-white cursor-crosshair"></canvas>
+            </div>
+
+            <!-- Canvas Control Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs">
+              <!-- Palette Colors -->
+              <div class="flex items-center gap-1.5">
+                <button onclick="setBrushColor('#0f172a')" class="color-btn w-6 h-6 rounded-full bg-slate-900 ring-2 ring-emerald-500 ring-offset-1" data-color="#0f172a" title="검은색"></button>
+                <button onclick="setBrushColor('#059669')" class="color-btn w-6 h-6 rounded-full bg-emerald-600 hover:scale-110 transition" data-color="#059669" title="초록색"></button>
+                <button onclick="setBrushColor('#2563eb')" class="color-btn w-6 h-6 rounded-full bg-blue-600 hover:scale-110 transition" data-color="#2563eb" title="파란색"></button>
+                <button onclick="setBrushColor('#dc2626')" class="color-btn w-6 h-6 rounded-full bg-red-600 hover:scale-110 transition" data-color="#dc2626" title="빨간색"></button>
+                <button onclick="setBrushColor('#d97706')" class="color-btn w-6 h-6 rounded-full bg-amber-600 hover:scale-110 transition" data-color="#d97706" title="주황색"></button>
+                <button onclick="setBrushColor('#ffffff')" class="color-btn w-6 h-6 rounded-full bg-white border border-slate-300 hover:scale-110 transition flex items-center justify-center text-[10px]" data-color="#ffffff" title="지우개">🧹</button>
+              </div>
+
+              <!-- Stroke Sizes -->
+              <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-xl border border-slate-200">
+                <span class="text-slate-500 text-[11px] font-bold">두께:</span>
+                <button id="btnSizeThin" onclick="setBrushSize(2)" class="px-2 py-0.5 rounded text-slate-700 hover:bg-slate-100 font-bold">얇게</button>
+                <button id="btnSizeMed" onclick="setBrushSize(5)" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">보통</button>
+                <button id="btnSizeThick" onclick="setBrushSize(10)" class="px-2 py-0.5 rounded text-slate-700 hover:bg-slate-100 font-bold">두껍게</button>
+              </div>
+
+              <!-- Utilities -->
+              <div class="flex items-center gap-2">
+                <button onclick="undoCanvas()" class="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold flex items-center gap-1">
+                  <i data-lucide="undo" class="w-3.5 h-3.5"></i> 취소
+                </button>
+                <button onclick="clearCanvas()" class="px-2.5 py-1.5 rounded-xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 font-bold flex items-center gap-1">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 전체 지우기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-emerald-100 shadow-xs">
+          <button onclick="goToStep(3)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>이전: 발명 사고 기법</span>
+          </button>
+
+          <button onclick="generateReport()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black px-8 py-3 rounded-xl text-sm sm:text-base shadow-md transition flex items-center gap-2 hover:scale-102">
+            <span>보고서 완성 및 미리보기 ✨</span>
+            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 5: Report Preview & Landscape Direct Printing -->
+      <section id="step5View" class="hidden fade-in space-y-6">
+        
+        <!-- Screen Action Header (Hidden during PDF print) -->
+        <div class="bg-white p-4 rounded-2xl border border-emerald-100 shadow-xs flex flex-wrap items-center justify-between gap-3 no-print">
+          <div>
+            <h3 class="text-base font-extrabold text-emerald-950 flex items-center gap-2">
+              🎉 그린 발명 보고서 작성이 완료되었습니다!
+            </h3>
+            <p class="text-xs text-slate-500">아래 1페이지 가로형 규격에 맞추어 출력하거나 PDF로 저장할 수 있습니다.</p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="goToStep(4)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5">
+              <span>내용 수정하기 ✏️</span>
+            </button>
+            <button onclick="resetInventionProcess()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5">
+              <span>새 보고서 만들기 🔄</span>
+            </button>
+            <button onclick="printReportPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-2 shadow-md hover:scale-105">
+              <span>PDF 저장 / 보고서 출력하기 📄</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Strict 1-Page Landscape Printable Container (#reportPaper) -->
+        <div id="reportPaper" class="bg-white rounded-2xl p-5 border-4 border-emerald-600 shadow-xl max-w-5xl mx-auto relative overflow-hidden flex flex-col justify-between">
+          
+          <!-- Report Header -->
+          <div class="border-b-2 border-emerald-200 pb-3 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-xl shadow-xs">
+                🌱
+              </div>
+              <div>
+                <span class="text-[10px] font-black tracking-widest text-emerald-700 uppercase">GREEN INVENTION REPORT (LANDSCAPE)</span>
+                <h1 class="text-xl sm:text-2xl font-black text-emerald-950">그린 발명 아이디어 보고서</h1>
+              </div>
+            </div>
+
+            <div class="text-right text-[11px] text-slate-500 font-medium space-y-0.5">
+              <p>문서번호: <strong id="reportDocId" class="text-slate-800 font-mono">GIL-2026-001</strong></p>
+              <p>작성일자: <strong id="reportDate" class="text-slate-800">2026년 9월 9일</strong></p>
+            </div>
+          </div>
+
+          <!-- Section 2: Two-Column Landscape Layout -->
+          <div class="grid grid-cols-12 gap-5 my-3 items-stretch flex-1">
+            
+            <!-- Left Column: Badges & Canvas Sketch Image (5 cols) -->
+            <div class="col-span-5 flex flex-col justify-between space-y-3">
+              
+              <!-- Badges Card -->
+              <div class="bg-emerald-50/80 p-3 rounded-xl border border-emerald-200 space-y-1.5 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500 font-medium">모둠 / 발명가:</span>
+                  <strong id="reportTeamName" class="text-emerald-950 font-bold"></strong>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500 font-medium">선택 환경 문제:</span>
+                  <strong id="reportProblem" class="text-emerald-800 font-bold"></strong>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500 font-medium">적용 발명 사고 기법:</span>
+                  <strong id="reportTechnique" class="text-teal-800 font-bold"></strong>
+                </div>
+              </div>
+
+              <!-- Sketch Image Display Container -->
+              <div class="flex-1 bg-white p-2 rounded-xl border-2 border-slate-200 flex flex-col justify-center items-center shadow-2xs overflow-hidden">
+                <span class="text-[10px] font-bold text-slate-400 mb-1">🎨 발명품 아이디어 스케치</span>
+                <img id="reportCanvasImage" src="" alt="발명품 스케치" class="max-h-[170px] max-w-full object-contain rounded-md">
+              </div>
+
+            </div>
+
+            <!-- Right Column: Invention Details & Eco Impact (7 cols) -->
+            <div class="col-span-7 flex flex-col justify-between space-y-2.5">
+              
+              <!-- Invention Name Block -->
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">INVENTION TITLE</span>
+                <h2 id="reportInventionName" class="text-base sm:text-lg font-black text-slate-900 leading-tight mt-0.5"></h2>
+              </div>
+
+              <!-- Idea Description Block -->
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex-1 space-y-1">
+                <h4 class="text-[11px] font-bold text-slate-800 flex items-center gap-1">
+                  💡 핵심 아이디어 및 작동 원리
+                </h4>
+                <p id="reportIdeaDesc" class="text-xs text-slate-700 leading-relaxed whitespace-pre-line print-compact-text"></p>
+              </div>
+
+              <!-- Eco Effect Block -->
+              <div class="bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 space-y-1">
+                <h4 class="text-[11px] font-bold text-emerald-900 flex items-center gap-1">
+                  🌱 지구 환경 보호 기대 효과
+                </h4>
+                <p id="reportEcoEffect" class="text-xs text-slate-800 leading-relaxed print-compact-text"></p>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Footer & Official Certification Seal -->
+          <div class="pt-2 border-t border-emerald-200 flex items-center justify-between text-xs text-slate-500 mt-1">
+            <div>
+              <p class="font-bold text-emerald-950 text-xs">그린 발명 연구소 (Green Invention Lab)</p>
+              <p class="text-[10px] text-slate-400">어린이 창의 환경 발명 교육 인증 보고서</p>
+            </div>
+
+            <!-- Official Seal Stamp -->
+            <div class="print-stamp w-14 h-14 rounded-full border-2 border-emerald-600 text-emerald-700 font-black flex items-center justify-center text-[9px] text-center transform -rotate-12 bg-emerald-50/90 shadow-2xs">
+              지구지킴이<br>그린발명<br>검인
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Global Toast Modal -->
+  <div id="toastModal" class="fixed top-5 right-5 z-50 hidden transition-all duration-300">
+    <div id="toastBox" class="bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-xs sm:text-sm font-bold">
+      <span id="toastIcon">⚠️</span>
+      <span id="toastMessage">입력 내용을 확인해주세요.</span>
+    </div>
+  </div>
+
+  <script>
+    /* Application State */
+    let currentStep = 1;
+    let selectedProblem = null;
+    let selectedTechnique = null;
+
+    /* Drawing Canvas State */
+    let canvas, ctx;
+    let isDrawing = false;
+    let brushColor = '#0f172a';
+    let brushSize = 5;
+    let canvasHistory = [];
+
+    /* 1. Environmental Problems List (8 Specific Problems + Custom Input) */
+    const PROBLEMS = [
+      { id: 'plastic_cup', emoji: '🥤', label: '일회용 플라스틱 컵', desc: '무분별하게 버려져 하천과 바다를 오염시키는 플라스틱 컵 쓰레기' },
+      { id: 'plastic_bag', emoji: '🛍️', label: '일회용 비닐봉지', desc: '분해되는 데 수백 년이 걸려 토양과 미세플라스틱 오염을 유발하는 비닐' },
+      { id: 'food_waste', emoji: '🍎', label: '음식물 잔반 쓰레기', desc: '부패하며 강력한 온실가스인 메탄을 배출하는 음식물 쓰레기' },
+      { id: 'car_exhaust', emoji: '🚗', label: '자동차 배기가스', desc: '대기를 오염시키고 온실효과를 심화시키는 내연기관 배출 가스' },
+      { id: 'e_waste', emoji: '📱', label: '전자 폐기물 (E-Waste)', desc: '중금속 오염을 유발하는 버려진 휴대폰과 전자제품 폐기물' },
+      { id: 'delivery_container', emoji: '🍱', label: '배달 용기 쓰레기', desc: '배달 문화 확산으로 폭발적으로 늘어난 일회용 플라스틱 용기' },
+      { id: 'fast_fashion', emoji: '👕', label: '버려지는 옷 (패스트 패션)', desc: '유행이 지나 쉽게 버려져 환경 오염을 일으키는 의류 폐기물' },
+      { id: 'custom', emoji: '✏️', label: '나만의 환경 문제 직접 입력', desc: '일상 속에서 직접 발견한 또 다른 환경 오염 문제를 작성합니다.' }
+    ];
+
+    /* 2. Invention Techniques List (8 Clean Korean Terms - NO ECO-TRIZ / NO SCAMPER) */
+    const TECHNIQUES = [
+      { id: 'add', emoji: '➕', label: '더하기', desc: '기존 물건에 새로운 기능이나 친환경 요소를 하나 더해보세요.', example: '우산 + LED 안전등 = 야간 안전 에코 우산' },
+      { id: 'sub', emoji: '➖', label: '빼기', desc: '불필요한 부분이나 환경에 해로운 요소를 줄이거나 없애보세요.', example: '음료 뚜껑의 빨대 구멍 없애기 = 바로 마시는 에코 뚜껑' },
+      { id: 'substitute', emoji: '🍃', label: '대체하기', desc: '플라스틱 대신 생분해 소재나 친환경 자연 소재로 바꾸어보세요.', example: '플라스틱 빨대 대신 = 대나무/쌀 빨대' },
+      { id: 'repurpose', emoji: '🔧', label: '용도 바꾸기', desc: '버려지는 폐기물이나 소재를 새로운 목적으로 재활용해보세요.', example: '폐현수막 = 튼튼한 장바구니 에코백' },
+      { id: 'change_size', emoji: '📐', label: '크기 바꾸기', desc: '크기를 접거나 줄여서 휴대성과 보관성을 높여보세요.', example: '딱딱한 텀블러 = 접어서 주머니에 넣는 실리콘 컵' },
+      { id: 'change_shape', emoji: '🎨', label: '모양 바꾸기', desc: '사용하기 용이하도록 형태나 구조를 완전히 바꿔보세요.', example: '구르는 원형 건전지 = 세워두기 편한 삼각 건전지' },
+      { id: 'reverse', emoji: '🔃', label: '거꾸로 하기', desc: '위아래, 순서, 고정관념을 반대로 뒤집어 생각해보세요.', example: '위로 짜는 케첩 병 = 아래로 세우는 뒤집힌 소스 용기' },
+      { id: 'divide_combine', emoji: '🧩', label: '나누기/분리하기', desc: '쉽게 분리하여 재활용하거나 여러 부분을 결합 가능하게 해보세요.', example: '분리수거가 용이한 착탈식 소형 가전' }
+    ];
+
+    /* Initialization */
+    window.addEventListener('DOMContentLoaded', () => {
+      renderProblemGrid();
+      renderTechniqueGrid();
+      initCanvas();
+      lucide.createIcons();
+    });
+
+    /* Step Router */
+    function goToStep(step) {
+      currentStep = step;
+
+      for (let i = 1; i <= 5; i++) {
+        const view = document.getElementById(`step${i}View`);
+        if (view) view.classList.toggle('hidden', i !== step);
+
+        const pill = document.getElementById(`navPill${i}`);
+        const numSpan = document.getElementById(`navNum${i}`);
+        if (pill) {
+          if (i === step) {
+            pill.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-white text-emerald-800 shadow-xs";
+            if (numSpan) numSpan.className = "w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]";
+          } else {
+            pill.className = "px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-emerald-700 transition flex items-center gap-1";
+            if (numSpan) numSpan.className = "w-4 h-4 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]";
+          }
+        }
+      }
+
+      // Mobile progress bar width
+      const progressBar = document.getElementById('mobileProgressBar');
+      if (progressBar) progressBar.style.width = `${(step / 5) * 100}%`;
+
+      // Step badges sync
+      if (step === 3) {
+        document.getElementById('step3ProblemBadge').textContent = selectedProblem ? `${selectedProblem.emoji} ${selectedProblem.label}` : '';
+      } else if (step === 4) {
+        document.getElementById('step4ProblemBadge').textContent = selectedProblem ? `${selectedProblem.emoji} ${selectedProblem.label}` : '';
+        document.getElementById('step4TechniqueBadge').textContent = selectedTechnique ? `${selectedTechnique.emoji} ${selectedTechnique.label}` : '';
+        setTimeout(resizeCanvas, 60);
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function checkStepAccess(targetStep) {
+      if (targetStep >= 3 && !selectedProblem) {
+        showToast('먼저 해결하고 싶은 환경 문제를 선택해주세요!');
+        goToStep(2);
+        return;
+      }
+      if (targetStep >= 4 && (!selectedProblem || !selectedTechnique)) {
+        showToast('환경 문제와 발명 사고 기법을 모두 선택해주세요!');
+        goToStep(3);
+        return;
+      }
+      if (targetStep === 5) {
+        const teamName = document.getElementById('inputTeamName').value.trim();
+        const inventionName = document.getElementById('inputInventionName').value.trim();
+        const ideaDesc = document.getElementById('inputIdeaDesc').value.trim();
+        const ecoEffect = document.getElementById('inputEcoEffect').value.trim();
+        if (!teamName || !inventionName || !ideaDesc || !ecoEffect) {
+          showToast('워크시트 모든 항목을 입력해주세요!');
+          goToStep(4);
+          return;
+        }
+      }
+      goToStep(targetStep);
+    }
+
+    /* Step 2: Environmental Problem Grid Renderer */
+    function renderProblemGrid() {
+      const container = document.getElementById('problemGrid');
+      container.innerHTML = '';
+
+      PROBLEMS.forEach(p => {
+        const isSelected = selectedProblem && selectedProblem.id === p.id;
+        const card = document.createElement('div');
+        card.className = `card-hover bg-white rounded-2xl p-4 cursor-pointer border-2 border-slate-100 flex flex-col justify-between space-y-3 transition ${isSelected ? 'selected-card' : ''}`;
+
+        card.innerHTML = `
+          <div>
+            <div class="text-3xl mb-2">${p.emoji}</div>
+            <h4 class="font-extrabold text-sm sm:text-base text-slate-800 leading-snug mb-1">${p.label}</h4>
+            <p class="text-xs text-slate-500 leading-relaxed">${p.desc}</p>
+          </div>
+          <div class="pt-2 border-t border-slate-50 flex items-center justify-between text-[11px] font-bold text-emerald-600">
+            <span>${isSelected ? '선택 완료' : '선택하기'}</span>
+            <i data-lucide="${isSelected ? 'check-circle' : 'circle'}" class="w-4 h-4"></i>
+          </div>
+        `;
+
+        card.onclick = () => {
+          if (p.id === 'custom') {
+            document.getElementById('customProblemBox').classList.remove('hidden');
+            selectedProblem = { id: 'custom', emoji: '✏️', label: '나만의 환경 문제', desc: '사용자 직접 작성' };
+          } else {
+            document.getElementById('customProblemBox').classList.add('hidden');
+            selectedProblem = p;
+          }
+          renderProblemGrid();
+          document.getElementById('selectedProblemLabel').textContent = `${selectedProblem.emoji} ${selectedProblem.label}`;
+          document.getElementById('btnStep2Next').disabled = false;
+        };
+
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    function applyCustomProblem() {
+      const val = document.getElementById('inputCustomProblem').value.trim();
+      if (!val) {
+        showToast('환경 문제를 입력해주세요.');
+        return;
+      }
+      selectedProblem = {
+        id: 'custom-' + Date.now(),
+        emoji: '✏️',
+        label: val,
+        desc: '사용자 직접 작성 환경 문제'
+      };
+      document.getElementById('selectedProblemLabel').textContent = `✏️ ${val}`;
+      document.getElementById('btnStep2Next').disabled = false;
+      showToast('나만의 환경 문제가 적용되었습니다!');
+    }
+
+    /* Step 3: Technique Grid Renderer */
+    function renderTechniqueGrid() {
+      const container = document.getElementById('techniqueGrid');
+      container.innerHTML = '';
+
+      TECHNIQUES.forEach(t => {
+        const isSelected = selectedTechnique && selectedTechnique.id === t.id;
+        const card = document.createElement('div');
+        card.className = `card-hover bg-white rounded-2xl p-4 cursor-pointer border-2 border-slate-100 flex flex-col justify-between space-y-3 transition ${isSelected ? 'selected-card' : ''}`;
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-3xl">${t.emoji}</span>
+              <span class="text-[10px] bg-teal-50 text-teal-700 font-extrabold px-2 py-0.5 rounded-full">발명 사고</span>
+            </div>
+            <h4 class="font-extrabold text-sm sm:text-base text-slate-800 leading-snug mb-1">${t.label}</h4>
+            <p class="text-xs text-slate-500 leading-relaxed mb-2">${t.desc}</p>
+            <div class="bg-slate-50 p-2 rounded-xl text-[11px] text-emerald-800 border border-slate-100">
+              💡 <strong>예시:</strong> ${t.example}
+            </div>
+          </div>
+          <div class="pt-2 border-t border-slate-50 flex items-center justify-between text-[11px] font-bold text-emerald-600">
+            <span>${isSelected ? '기법 선택됨' : '기법 선택'}</span>
+            <i data-lucide="${isSelected ? 'check-circle' : 'circle'}" class="w-4 h-4"></i>
+          </div>
+        `;
+
+        card.onclick = () => {
+          selectedTechnique = t;
+          renderTechniqueGrid();
+          document.getElementById('selectedTechniqueLabel').textContent = `${t.emoji} ${t.label}`;
+          document.getElementById('btnStep3Next').disabled = false;
+        };
+
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    /* Step 4: Drawing Canvas Functionality */
+    function initCanvas() {
+      canvas = document.getElementById('sketchCanvas');
+      ctx = canvas.getContext('2d');
+
+      // Mouse Events
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDrawing);
+      canvas.addEventListener('mouseleave', stopDrawing);
+
+      // Touch Events
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startDrawing(e);
+      });
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        draw(e);
+      });
+      canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        stopDrawing();
+      });
+
+      window.addEventListener('resize', resizeCanvas);
+    }
+
+    function resizeCanvas() {
+      if (!canvas) return;
+      const container = canvas.parentElement;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tempCtx = tempCanvas.getContext('2d');
+      if (canvas.width > 0 && canvas.height > 0) {
+        tempCtx.drawImage(canvas, 0, 0);
+      }
+
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (tempCanvas.width > 0 && tempCanvas.height > 0) {
+        ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+      } else {
+        saveCanvasState();
+      }
+    }
+
+    function getCanvasPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+
+      if (e.touches && e.touches[0]) {
+        return {
+          x: (e.touches[0].clientX - rect.left) * scaleX,
+          y: (e.touches[0].clientY - rect.top) * scaleY
+        };
+      }
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    }
+
+    function startDrawing(e) {
+      isDrawing = true;
+      const pos = getCanvasPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      const pos = getCanvasPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = brushColor;
+      ctx.lineWidth = brushSize;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+
+    function stopDrawing() {
+      if (isDrawing) {
+        isDrawing = false;
+        ctx.closePath();
+        saveCanvasState();
+      }
+    }
+
+    function setBrushColor(color) {
+      brushColor = color;
+      document.querySelectorAll('.color-btn').forEach(btn => {
+        if (btn.dataset.color === color) {
+          btn.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-1');
+        } else {
+          btn.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-1');
+        }
+      });
+    }
+
+    function setBrushSize(size) {
+      brushSize = size;
+      document.getElementById('btnSizeThin').className = size === 2 ? 'px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold' : 'px-2 py-0.5 rounded text-slate-700 hover:bg-slate-100 font-bold';
+      document.getElementById('btnSizeMed').className = size === 5 ? 'px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold' : 'px-2 py-0.5 rounded text-slate-700 hover:bg-slate-100 font-bold';
+      document.getElementById('btnSizeThick').className = size === 10 ? 'px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold' : 'px-2 py-0.5 rounded text-slate-700 hover:bg-slate-100 font-bold';
+    }
+
+    function clearCanvas() {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      saveCanvasState();
+    }
+
+    function saveCanvasState() {
+      if (canvasHistory.length >= 12) canvasHistory.shift();
+      canvasHistory.push(canvas.toDataURL());
+    }
+
+    function undoCanvas() {
+      if (canvasHistory.length > 1) {
+        canvasHistory.pop();
+        const prevState = canvasHistory[canvasHistory.length - 1];
+        const img = new Image();
+        img.src = prevState;
+        img.onload = () => {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+        };
+      }
+    }
+
+    /* Step 5: Report Generation */
+    function generateReport() {
+      const teamName = document.getElementById('inputTeamName').value.trim();
+      const inventionName = document.getElementById('inputInventionName').value.trim();
+      const ideaDesc = document.getElementById('inputIdeaDesc').value.trim();
+      const ecoEffect = document.getElementById('inputEcoEffect').value.trim();
+
+      if (!teamName || !inventionName || !ideaDesc || !ecoEffect) {
+        showToast('모둠/발명가 이름, 발명품 이름, 아이디어 원리, 기대 효과를 모두 작성해 주세요!');
+        return;
+      }
+
+      // Populate Report Paper Fields
+      document.getElementById('reportTeamName').textContent = teamName;
+      document.getElementById('reportProblem').textContent = selectedProblem ? `${selectedProblem.emoji} ${selectedProblem.label}` : '-';
+      document.getElementById('reportTechnique').textContent = selectedTechnique ? `${selectedTechnique.emoji} ${selectedTechnique.label}` : '-';
+      document.getElementById('reportInventionName').textContent = inventionName;
+      document.getElementById('reportIdeaDesc').textContent = ideaDesc;
+      document.getElementById('reportEcoEffect').textContent = ecoEffect;
+
+      // Export Canvas Sketch to DataURL
+      document.getElementById('reportCanvasImage').src = canvas.toDataURL('image/png');
+
+      // Set Document Id & Date
+      const docNum = 'GIL-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000);
+      document.getElementById('reportDocId').textContent = docNum;
+      document.getElementById('reportDate').textContent = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+
+      // Celebration Confetti
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
+      }
+
+      goToStep(5);
+    }
+
+    /* Direct Print / PDF Save */
+    function printReportPDF() {
+      window.print();
+    }
+
+    /* Reset Application */
+    function resetInventionProcess() {
+      selectedProblem = null;
+      selectedTechnique = null;
+
+      document.getElementById('inputTeamName').value = '';
+      document.getElementById('inputInventionName').value = '';
+      document.getElementById('inputIdeaDesc').value = '';
+      document.getElementById('inputEcoEffect').value = '';
+
+      renderProblemGrid();
+      renderTechniqueGrid();
+      clearCanvas();
+
+      document.getElementById('selectedProblemLabel').textContent = '선택되지 않음';
+      document.getElementById('selectedTechniqueLabel').textContent = '선택되지 않음';
+      document.getElementById('btnStep2Next').disabled = true;
+      document.getElementById('btnStep3Next').disabled = true;
+
+      goToStep(1);
+      showToast('새로운 발명 보고서 작성을 시작합니다.');
+    }
+
+    /* Toast Utility */
+    function showToast(msg) {
+      const toast = document.getElementById('toastModal');
+      document.getElementById('toastMessage').textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
